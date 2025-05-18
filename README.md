@@ -1,5 +1,19 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Step 1: Building the UI and the Smart Contract
+
+### WavePortal - A Simple Starknet App Template
+
+This template demonstrates how to interact with Starknet blockchain:
+- Connect your Starknet wallet (Argent X, Braavos)
+- Send messages that are stored on-chain
+- View messages from other users
+
+### The WavePortal Cairo Contract:
+- Records all messages as on-chain events
+- Counts total waves sent
+- Has a 21% chance to reward users with tokens when they wave
+
 ## Getting Started
 
 First, run the development server:
