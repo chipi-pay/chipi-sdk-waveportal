@@ -12,6 +12,20 @@ import { ClipLoader } from 'react-spinners';
 const CONTRACT_ADDRESS = '0x0638aa7782bfa69cbd9162fd3cfc086038dfc055fe200fe115a9b1c88b20b941';
 const EVENT_KEY = '0x01b1d6c3fc5d2623b725e2a645cba4333d2b8bc1a81895c633380cff638b293f';
 
+/**
+ * WavePortal - A Simple Starknet App Template
+ * 
+ * This template demonstrates how to interact with Starknet blockchain:
+ * - Connect your Starknet wallet (Argent X, Braavos)
+ * - Send messages that are stored on-chain
+ * - View messages from other users
+ * 
+ * The WavePortal Cairo contract:
+ * - Records all messages as on-chain events
+ * - Counts total waves sent
+ * - Has a 21% chance to reward users with tokens when they wave
+ */
+
 export default function Home() {
   const [message, setMessage] = useState('');
   const [waves, setWaves] = useState<string[]>([]);
