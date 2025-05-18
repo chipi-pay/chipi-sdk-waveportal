@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Contract, RpcProvider, CallData } from 'starknet';
 import { useAccount, useConnect } from '@starknet-react/core';
-import abi from './WavePortal.abi.json';
+import abi from './contracts/abi/WavePortal.abi.json';
 import { motion } from 'framer-motion';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
