@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.19.4",
     "@starknet-react/core": "^3.7.4",
     "framer-motion": "^12.12.1",
     "next": "15.3.2",
