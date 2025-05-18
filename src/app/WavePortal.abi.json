@@ -1,0 +1,20 @@
+[
+  {
+    "type": "function",
+    "name": "total_waves",
+    "inputs": [],
+    "outputs": [
+      { "name": "count", "type": "felt" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "wave",
+    "inputs": [
+      { "name": "message_len", "type": "felt" },
+      { "name": "message", "type": "felt*" }
+    ],
+    "outputs": []
+  }
+]
