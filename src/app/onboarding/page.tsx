@@ -53,7 +53,7 @@ export default function OnboardingComponent() {
       }
 
       await user?.reload();
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       // You might want to show this error to the user
