@@ -6,12 +6,6 @@ const CHIPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_CHIPI_PUBLIC_KEY!;
 const CHIPI_APP_ID = process.env.NEXT_PUBLIC_CHIPI_APP_ID!;
 const CHIPI_SECRET_KEY = process.env.NEXT_PUBLIC_CHIPI_SECRET_KEY!;
 
-// Debug logs
-console.log('Environment Variables:', {
-  NEXT_PUBLIC_CHIPI_PUBLIC_KEY: process.env.NEXT_PUBLIC_CHIPI_PUBLIC_KEY,
-  NEXT_PUBLIC_CHIPI_APP_ID: process.env.NEXT_PUBLIC_CHIPI_APP_ID,
-  NEXT_PUBLIC_CHIPI_SECRET_KEY: process.env.NEXT_PUBLIC_CHIPI_SECRET_KEY
-});
 
 if (!CHIPI_PUBLIC_KEY || !CHIPI_APP_ID || !CHIPI_SECRET_KEY) {
   console.error('Missing environment variables:', {
