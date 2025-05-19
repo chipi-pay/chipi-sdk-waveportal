@@ -4,14 +4,16 @@ import * as React from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-// Import the server action that will update user metadata
-// import { completeOnboarding } from "./_actions";
+import { useCreateWallet } from "@chipi-pay/chipi-sdk";
+import { completeOnboarding } from "./_actions";
 
 export default function OnboardingComponent() {
   // Access the current user's data
   const { user } = useUser();
   const router = useRouter();
-  
+  const { createWalletAsync, isLoading, isError } = useCreateWallet();
+
+
   // This function handles the form submission
   // In a complete implementation, this would:
   // 1. Collect user data from the form
@@ -20,15 +22,53 @@ export default function OnboardingComponent() {
   // 4. Reload the user data to refresh session claims
   // 5. Redirect to the main application page
   const handleSubmit = async (formData: FormData) => {
-    // In a real implementation, you would update user metadata with something like:
-    // const result = await completeOnboarding(formData);
-    
-    // Reload user data to refresh the session claims
-    await user?.reload();
-    // Redirect to the main page after successful onboarding
-    router.push("/");
-    console.log(formData);
+    try {
+      const pin = formData.get('pin') as string;
+      
+      if (!pin || pin.trim() === '') {
+        throw new Error('PIN is required');
+      }
+
+      if (!/^\d+$/.test(pin)) {
+        throw new Error('PIN must contain only numbers');
+      }
+
+      console.log('Creating wallet...');
+      const response = await createWalletAsync(pin);
+      console.log('Wallet creation response:', response);
+
+      if (!response.success || !response.wallet) {
+        throw new Error('Failed to create wallet');
+      }
+
+      console.log('Updating Clerk metadata...');
+      const result = await completeOnboarding({
+        publicKey: response.wallet.publicKey,
+        encryptedPrivateKey: response.wallet.encryptedPrivateKey,
+      });
+      console.log('Clerk update result:', result);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      await user?.reload();
+      router.push("/dashboard");
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      // You might want to show this error to the user
+      alert(error instanceof Error ? error.message : 'An error occurred');
+    }
   }
+
+  if (isLoading) {
+    return <div>Creating wallet...</div>;
+  }
+
+  if (isError) {
+    return <div>Error creating wallet</div>;
+  }
+
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] flex items-center justify-center p-4">
