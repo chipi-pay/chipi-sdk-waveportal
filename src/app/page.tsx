@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { ClipLoader } from 'react-spinners';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 const CONTRACT_ADDRESS = '0x0638aa7782bfa69cbd9162fd3cfc086038dfc055fe200fe115a9b1c88b20b941';
 const EVENT_KEY = '0x01b1d6c3fc5d2623b725e2a645cba4333d2b8bc1a81895c633380cff638b293f';
@@ -39,6 +41,8 @@ export default function Home() {
 
   const { account } = useAccount();
   const { connectors, connect } = useConnect();
+  const { isSignedIn } = useUser();
+  const router = useRouter();
 
   const fetchWaves = async () => {
     try {
@@ -213,58 +217,69 @@ export default function Home() {
       >
         <h1 className="text-3xl font-extrabold mb-4 text-cyan-300">🌊 WavePortal</h1>
 
-        {!account && connectors && connectors.length > 0 && (
+        {!isSignedIn ? (
           <button
-            onClick={async () => {
-              try {
-                console.log('Connectors:', connectors);
-                connectors.forEach((c, i) => {
-                  console.log(`Connector ${i}:`, c);
-                });
-                await connect({ connector: connectors[0] });
-              } catch (err) {
-                alert('Failed to connect wallet. Make sure you have a Starknet wallet extension (e.g., Argent X, Braavos) installed and unlocked.');
-                console.error('Wallet connect error:', err);
-              }
-            }}
+            onClick={() => router.push('/sign-in')}
             className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full mb-4"
           >
-            Connect Wallet
+            Sign-in
           </button>
-        )}
-        {!account && (!connectors || connectors.length === 0) && (
-          <div className="text-cyan-200 mb-4">No wallet connectors found.</div>
-        )}
-
-        {account && (
+        ) : (
           <>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full p-2 rounded-lg bg-cyan-200/10 border border-cyan-200/20 resize-none mb-4 text-white placeholder:text-cyan-200/50"
-              rows={3}
-              placeholder="Your wave message..."
-              disabled={loading}
-            />
-            <button
-              onClick={sendWave}
-              disabled={loading}
-              className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  <ClipLoader size={16} color="#9DECF9" className="mr-2" />
-                  {txHash ? 'Confirming...' : 'Sending...'}
-                </>
-              ) : (
-                '🌊 Send Wave'
-              )}
-            </button>
-            
-            {txHash && (
-              <div className="mt-2 text-xs text-cyan-200 text-center">
-                Transaction submitted! Waiting for confirmation...
-              </div>
+            {!account && connectors && connectors.length > 0 && (
+              <button
+                onClick={async () => {
+                  try {
+                    console.log('Connectors:', connectors);
+                    connectors.forEach((c, i) => {
+                      console.log(`Connector ${i}:`, c);
+                    });
+                    await connect({ connector: connectors[0] });
+                  } catch (err) {
+                    alert('Failed to connect wallet. Make sure you have a Starknet wallet extension (e.g., Argent X, Braavos) installed and unlocked.');
+                    console.error('Wallet connect error:', err);
+                  }
+                }}
+                className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full mb-4"
+              >
+                Connect Wallet
+              </button>
+            )}
+            {!account && (!connectors || connectors.length === 0) && (
+              <div className="text-cyan-200 mb-4">No wallet connectors found.</div>
+            )}
+
+            {account && (
+              <>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full p-2 rounded-lg bg-cyan-200/10 border border-cyan-200/20 resize-none mb-4 text-white placeholder:text-cyan-200/50"
+                  rows={3}
+                  placeholder="Your wave message..."
+                  disabled={loading}
+                />
+                <button
+                  onClick={sendWave}
+                  disabled={loading}
+                  className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full flex items-center justify-center"
+                >
+                  {loading ? (
+                    <>
+                      <ClipLoader size={16} color="#9DECF9" className="mr-2" />
+                      {txHash ? 'Confirming...' : 'Sending...'}
+                    </>
+                  ) : (
+                    '🌊 Send Wave'
+                  )}
+                </button>
+                
+                {txHash && (
+                  <div className="mt-2 text-xs text-cyan-200 text-center">
+                    Transaction submitted! Waiting for confirmation...
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

@@ -11,12 +11,6 @@ export default clerkMiddleware(async (auth, req) => {
     return redirectToSignIn({ returnBackUrl: req.url });
   }
 
-  // Redirect them to the /onboading route to complete onboarding
-  if (userId  && req.nextUrl.pathname !== "/onboarding") {
-    const onboardingUrl = new URL("/onboarding", req.url);
-    return NextResponse.redirect(onboardingUrl);
-  }
-
   // If the user is logged in and the route is protected, let them view.
   if (userId && !isPublicRoute(req)) {
     return NextResponse.next();

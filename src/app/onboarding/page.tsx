@@ -46,11 +46,12 @@ export default function OnboardingComponent() {
               <label className="block text-sm font-semibold text-cyan-100">Enter your PIN</label>
               <p className="text-xs text-cyan-200/70">This PIN will be used to create your wallet and encrypt your private key.</p>
               <input
-                type="number"
+                type="password"
                 name="pin"
-                pattern="\d*"
-                minLength={6}
-                maxLength={6}
+                inputMode="numeric"
+                pattern="[0-9]{4}"
+                minLength={4}
+                maxLength={4}
                 required
                 className="mt-2 w-full px-3 py-2 bg-cyan-200/10 border border-cyan-200/20 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-300 text-white"
               />
