@@ -14,6 +14,50 @@ This template demonstrates how to interact with Starknet blockchain:
 - Counts total waves sent
 - Has a 21% chance to reward users with tokens when they wave
 
+## Step 2: Adding User Authentication with Clerk
+
+In this step, we integrate Clerk to provide a seamless authentication experience:
+
+### Authentication Features
+- User sign-in and sign-up flow
+- Social login options (Google, GitHub, etc.)
+- Secure session management
+- Protected routes for authenticated users
+
+### Implementation Steps
+1. Add Clerk's `<SignIn />` component to create a dedicated sign-in page
+2. Configure authentication middleware to protect routes
+3. Create an onboarding experience for new users
+
+### Custom Onboarding Flow
+
+The application implements a custom onboarding flow using Clerk's user management capabilities:
+
+- **Session Token Customization**: We add a custom claim to track onboarding status in the user's session token
+- **Public Metadata**: User onboarding progress is stored in the user's `publicMetadata` with an `onboardingComplete` flag
+- **Middleware Protection**: Routes are protected based on authentication and onboarding status
+- **Automatic Redirection**: Users who haven't completed onboarding are redirected to the onboarding page
+- **Server Actions**: We use server-side actions to securely update user metadata upon onboarding completion
+
+For detailed implementation, see Clerk's [Add Custom Onboarding](https://clerk.com/docs/references/nextjs/add-onboarding-flow) guide.
+
+### Example Integration (Next.js)
+
+```tsx
+'use client'
+
+import { SignIn, useUser } from '@clerk/nextjs'
+
+export default function SignInPage() {
+  return <SignIn />
+}
+```
+
+For a deep dive into Clerk's authentication, check out:
+- [Clerk Sign-In Documentation](https://clerk.com/docs/components/authentication/sign-in)
+- [Adding Custom Onboarding](https://clerk.com/docs/components/authentication/custom-onboarding)
+- [Middleware Configuration](https://clerk.com/docs/nextjs/middleware)
+
 ## Getting Started
 
 First, run the development server:
