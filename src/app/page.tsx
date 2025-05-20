@@ -181,11 +181,11 @@ export default function Home() {
         // Enhanced debugging for paymaster issues
         if (err.message.includes('argent/multicall-failed') || err.message.includes('u256_sub Overflow')) {
           console.error("This appears to be a paymaster configuration issue. The transaction is failing at the contract level.");
-          alert("Transaction failed with a paymaster error. This typically happens when:\n\n" +
+         /*alert("Transaction failed with a paymaster error. This typically happens when:\n\n" +
                 "1. The paymaster isn't properly configured\n" +
                 "2. The contract method isn't compatible with the paymaster\n" +
                 "3. The transaction parameters are incorrect\n\n" +
-                "Check the console for more details.");
+                "Check the console for more details.");*/
           return;
         }
         
@@ -205,7 +205,7 @@ export default function Home() {
         }
       }
       
-      alert("Error sending wave: " + (err instanceof Error ? err.message : String(err)));
+      //alert("Error sending wave: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
