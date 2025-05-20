@@ -58,6 +58,129 @@ For a deep dive into Clerk's authentication, check out:
 - [Adding Custom Onboarding](https://clerk.com/docs/components/authentication/custom-onboarding)
 - [Middleware Configuration](https://clerk.com/docs/nextjs/middleware)
 
+## Step 3: Integrating Chipi SDK for Invisible Wallets
+
+In this step, we enhance the user experience by adding invisible wallet functionality using Chipi SDK:
+
+### Key Features
+- Generate Argent-compatible wallets for users without requiring a crypto wallet
+- Store wallet credentials securely in Clerk user metadata
+- Sponsor gas fees for all transactions using Avnu's paymaster
+- Track growth metrics and user engagement in the ChipiPay dashboard
+
+### Implementation Steps
+
+1. **Setting up Chipi SDK Provider**
+
+```tsx
+'use client'
+
+import { ChipiProvider } from "@chipi-pay/chipi-sdk";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ChipiProvider appId={process.env.NEXT_PUBLIC_CHIPI_APP_ID}>
+      {children}
+    </ChipiProvider>
+  );
+}
+```
+
+2. **Creating Invisible Wallets**
+
+```tsx
+'use client'
+
+import { useCreateWallet } from "@chipi-pay/chipi-sdk";
+import { useUser } from "@clerk/nextjs";
+import { useState } from "react";
+
+export function CreateWalletButton() {
+  const { createWalletAsync, isLoading } = useCreateWallet();
+  const { user } = useUser();
+  const [pin, setPin] = useState('');
+  
+  const handleCreateWallet = async () => {
+    try {
+      // Create wallet with user's PIN
+      const result = await createWalletAsync(pin);
+      
+      // Store wallet in Clerk metadata
+      await user?.update({
+        publicMetadata: {
+          wallet: {
+            address: result.accountAddress,
+            // Don't store private keys in publicMetadata in production!
+            // This is just for demonstration
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error("Failed to create wallet:", error);
+    }
+  };
+  
+  return (
+    <div>
+      <input 
+        type="password" 
+        placeholder="Set your PIN" 
+        value={pin}
+        onChange={(e) => setPin(e.target.value)}
+        className="px-4 py-2 border rounded-md mr-2"
+      />
+      <button
+        onClick={handleCreateWallet}
+        disabled={isLoading}
+        className="bg-blue-500 text-white px-4 py-2 rounded-md"
+      >
+        {isLoading ? "Creating..." : "Create Wallet"}
+      </button>
+    </div>
+  );
+}
+```
+
+3. **Sponsoring Gas for Transactions**
+
+With Chipi SDK, all transactions are automatically sponsored through Avnu's paymaster. This means:
+
+- Users don't need ETH to pay for gas
+- Transactions are executed seamlessly without wallet popups
+- All gas fees are covered by your application
+
+4. **Accessing Growth Analytics**
+
+Monitor your application's performance and user engagement:
+
+- Visit [dashboard.chipipay.com](https://dashboard.chipipay.com) to access your metrics
+- Track wallet creation, transaction volume, and user activity
+- Analyze growth trends and optimize your application
+
+### Storage in Clerk Metadata
+
+Clerk's user metadata provides a secure way to associate wallet addresses with user profiles:
+
+```typescript
+// Server action to securely retrieve user's wallet
+async function getUserWallet(userId: string) {
+  const user = await clerkClient.users.getUser(userId);
+  return user.publicMetadata.wallet;
+}
+
+// Server action to update wallet information
+async function updateWalletMetadata(userId: string, walletData: any) {
+  await clerkClient.users.updateUser(userId, {
+    publicMetadata: {
+      wallet: walletData
+    }
+  });
+}
+```
+
+For more detailed implementation, visit [sdkdocs.chipipay.com](https://sdkdocs.chipipay.com).
+
 ## Getting Started
 
 First, run the development server:
@@ -73,22 +196,3 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

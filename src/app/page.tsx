@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { Contract, RpcProvider, CallData } from 'starknet';
-import { useAccount, useConnect } from '@starknet-react/core';
+import { useEffect, useState } from 'react';
+import { Contract, RpcProvider } from 'starknet';
 import abi from './contracts/abi/WavePortal.abi.json';
 import { motion } from 'framer-motion';
-import Confetti from 'react-confetti';
-import { useWindowSize } from 'react-use';
 import { ClipLoader } from 'react-spinners';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { useCallAnyContract } from "@chipi-pay/chipi-sdk";
+import Confetti from 'react-confetti';
 
 const CONTRACT_ADDRESS = '0x0638aa7782bfa69cbd9162fd3cfc086038dfc055fe200fe115a9b1c88b20b941';
 const EVENT_KEY = '0x01b1d6c3fc5d2623b725e2a645cba4333d2b8bc1a81895c633380cff638b293f';
@@ -33,16 +32,39 @@ export default function Home() {
   const [waves, setWaves] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState<string>('0');
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [showConfetti, setShowConfetti] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { width, height } = useWindowSize();
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
-  const { account } = useAccount();
-  const { connectors, connect } = useConnect();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const router = useRouter();
+  
+  // Access the full hook result without destructuring
+  const chipiContract = useCallAnyContract();
+  
+  // Debugging
+  console.log("Full Chipi Contract object:", chipiContract);
+
+  // Add state for PIN
+  const [pin, setPin] = useState("");
+
+  // Get wallet from Clerk metadata
+  const wallet = user?.publicMetadata?.publicKey && user?.publicMetadata?.encryptedPrivateKey
+    ? {
+        publicKey: user.publicMetadata.publicKey as string,
+        encryptedPrivateKey: user.publicMetadata.encryptedPrivateKey as string,
+      }
+    : null;
+
+  // Prepare calldata for the wave function - modify to match original implementation
+  const getCalldata = (message: string) => {
+    // Same conversion but format in a similar way to the original code
+    const feltArr = Array.from(message).map((c) => BigInt(c.charCodeAt(0)).toString());
+    
+    // Return in object format with message key, similar to how original CallData.compile worked
+    return {
+      message: feltArr
+    };
+  };
 
   const fetchWaves = async () => {
     try {
@@ -92,102 +114,102 @@ export default function Home() {
     }
   };
 
-  const checkTransactionStatus = async (txHash: string) => {
-    try {
-      const provider = new RpcProvider({ nodeUrl: 'https://starknet-mainnet.public.blastapi.io/rpc/v0_8' });
-      const receipt = await provider.getTransactionReceipt(txHash);
-      
-      // Check if the transaction is accepted on L2
-      const isAccepted = 
-        receipt && 
-        'execution_status' in receipt && 
-        receipt.execution_status === 'SUCCEEDED' &&
-        'finality_status' in receipt &&
-        receipt.finality_status === 'ACCEPTED_ON_L2';
-      
-      if (isAccepted) {
-        setTxHash(null);
-        setLoading(false);
-        fetchWaves();
-        getTotalWaves();
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 5000);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error('Error checking transaction status:', err);
-      return false;
-    }
-  };
-
-  const pollForConfirmation = async (txHash: string) => {
-    let attempts = 0;
-    const maxAttempts = 20; // Try for about 2 minutes
-    
-    const poll = async () => {
-      if (attempts >= maxAttempts) {
-        setLoading(false);
-        setTxHash(null);
-        return;
-      }
-      
-      const confirmed = await checkTransactionStatus(txHash);
-      if (!confirmed) {
-        attempts++;
-        setTimeout(poll, 6000); // Check every 6 seconds
-      }
-    };
-    
-    await poll();
-  };
-
   const sendWave = async () => {
-    if (!account || !message) return;
+    if (!wallet || !pin || !message) {
+      alert("Missing wallet, PIN, or message");
+      return;
+    }
+    
     setLoading(true);
+    
     try {
-      const feltArr = Array.from(message).map((c) => BigInt(c.charCodeAt(0)));
-      const calldata = CallData.compile({ message: feltArr });
-  
-      const res = await account.execute({
-        contractAddress: CONTRACT_ADDRESS,
-        entrypoint: 'wave',
-        calldata,
-      });
-  
-      console.log('Wave sent:', res.transaction_hash);
-      setMessage('');
-      setTxHash(res.transaction_hash);
-      pollForConfirmation(res.transaction_hash);
+      console.log("Preparing to send wave");
+      
+      const messageData = getCalldata(message);
+      console.log("Message data prepared:", messageData);
+      
+      // Keep the calldata simple
+      const callData = [messageData.message.length.toString(), ...messageData.message];
+      console.log("Final calldata:", callData);
+      console.log("Contract address:", CONTRACT_ADDRESS);
+      
+      // Use the correct method name that's available in the SDK
+      const callFn = chipiContract.callAnyContractAsync;
+      
+      if (!callFn) {
+        throw new Error(`The callAnyContractAsync method is not available in this SDK version.`);
+      }
+      
+      console.log("Using method: callAnyContractAsync");
+      
+      // Simplify the payload - let Chipi handle the paymaster configuration
+      // Remove any parameters that might override the default paymaster setup
+      const payload = {
+        encryptKey: pin,
+        wallet: {
+          publicKey: wallet.publicKey,
+          encryptedPrivateKey: wallet.encryptedPrivateKey
+        },
+        calls: [
+          {
+            contractAddress: CONTRACT_ADDRESS,
+            entrypoint: "wave",
+            calldata: callData
+          }
+        ]
+        // Remove all custom parameters to ensure defaults are used
+        // The SDK should handle paymaster configuration automatically
+      };
+      
+      console.log("Sending payload:", JSON.parse(JSON.stringify(payload)));
+      
+      // Send the transaction
+      const result = await callFn(payload);
+      
+      console.log("Wave sent successfully:", result);
+      setMessage("");
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000); // Show for 5 seconds
     } catch (err) {
-      console.error('Error sending wave:', err);
+      console.error("Error sending wave:", err);
+      
+      // More detailed error parsing
+      if (err instanceof Error) {
+        console.error("Error details:", err.message);
+        console.error("Error stack:", err.stack);
+        
+        // Enhanced debugging for paymaster issues
+        if (err.message.includes('argent/multicall-failed') || err.message.includes('u256_sub Overflow')) {
+          console.error("This appears to be a paymaster configuration issue. The transaction is failing at the contract level.");
+         /*alert("Transaction failed with a paymaster error. This typically happens when:\n\n" +
+                "1. The paymaster isn't properly configured\n" +
+                "2. The contract method isn't compatible with the paymaster\n" +
+                "3. The transaction parameters are incorrect\n\n" +
+                "Check the console for more details.");*/
+          return;
+        }
+        
+        // Try to extract more details if this is an API error
+        try {
+          if (err.message.includes('{"statusCode":500')) {
+            console.error("This appears to be a server error on Chipi's backend. It might be temporary or require SDK configuration changes.");
+            // Extract more details if possible
+            const errorMatch = err.message.match(/\{.*\}/);
+            if (errorMatch) {
+              const errorJson = JSON.parse(errorMatch[0]);
+              console.error("Detailed API error:", errorJson);
+            }
+          }
+        } catch (parseErr) {
+          console.error("Could not parse error details:", parseErr);
+        }
+      }
+      
+      //alert("Error sending wave: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
       setLoading(false);
     }
   };
-
-  // Start automatic refresh when transaction is confirmed
-  useEffect(() => {
-    // Clear existing interval if there is one
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-
-    // If transaction is submitted, start refreshing
-    if (txHash) {
-      refreshIntervalRef.current = setInterval(() => {
-        fetchWaves();
-        getTotalWaves();
-      }, 5000); // Refresh every 5 seconds
-    }
-
-    // Cleanup interval on unmount
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, [txHash]);
 
   // Initial data fetch
   useEffect(() => {
@@ -207,8 +229,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] flex items-center justify-center p-4">
-      {showConfetti && <Confetti width={width} height={height} recycle={false} numberOfPieces={500} />}
-      
+      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -226,30 +247,17 @@ export default function Home() {
           </button>
         ) : (
           <>
-            {!account && connectors && connectors.length > 0 && (
-              <button
-                onClick={async () => {
-                  try {
-                    console.log('Connectors:', connectors);
-                    connectors.forEach((c, i) => {
-                      console.log(`Connector ${i}:`, c);
-                    });
-                    await connect({ connector: connectors[0] });
-                  } catch (err) {
-                    alert('Failed to connect wallet. Make sure you have a Starknet wallet extension (e.g., Argent X, Braavos) installed and unlocked.');
-                    console.error('Wallet connect error:', err);
-                  }
-                }}
-                className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full mb-4"
-              >
-                Connect Wallet
-              </button>
-            )}
-            {!account && (!connectors || connectors.length === 0) && (
-              <div className="text-cyan-200 mb-4">No wallet connectors found.</div>
-            )}
-
-            {account && (
+            {!wallet ? (
+              <div>
+                <p className="text-cyan-200 mb-4">You need to complete onboarding to create a wallet.</p>
+                <button
+                  onClick={() => router.push('/onboarding')}
+                  className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full mb-4"
+                >
+                  Complete Onboarding
+                </button>
+              </div>
+            ) : (
               <>
                 <textarea
                   value={message}
@@ -257,6 +265,14 @@ export default function Home() {
                   className="w-full p-2 rounded-lg bg-cyan-200/10 border border-cyan-200/20 resize-none mb-4 text-white placeholder:text-cyan-200/50"
                   rows={3}
                   placeholder="Your wave message..."
+                  disabled={loading}
+                />
+                <input
+                  type="password"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  className="w-full p-2 rounded-lg bg-cyan-200/10 border border-cyan-200/20 resize-none mb-4 text-white placeholder:text-cyan-200/50"
+                  placeholder="Enter PIN"
                   disabled={loading}
                 />
                 <button
@@ -267,18 +283,12 @@ export default function Home() {
                   {loading ? (
                     <>
                       <ClipLoader size={16} color="#9DECF9" className="mr-2" />
-                      {txHash ? 'Confirming...' : 'Sending...'}
+                      {'Sending...'}
                     </>
                   ) : (
                     '🌊 Send Wave'
                   )}
                 </button>
-                
-                {txHash && (
-                  <div className="mt-2 text-xs text-cyan-200 text-center">
-                    Transaction submitted! Waiting for confirmation...
-                  </div>
-                )}
               </>
             )}
           </>

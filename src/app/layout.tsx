@@ -8,6 +8,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import Link from "next/link";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,8 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    <ClerkProvider signInFallbackRedirectUrl="/" signUpFallbackRedirectUrl="/" afterSignOutUrl="/">
+      <Providers>
     <html lang="en">
-      <ClerkProvider signInFallbackRedirectUrl="/" signUpFallbackRedirectUrl="/" afterSignOutUrl="/">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
           <header className="flex items-center h-20 gap-4 px-4 border-b border-cyan-300 border-solid sm:px-8 border-opacity-20">
             <Link href="/" className="flex items-center h-20 gap-2 sm:gap-4">
@@ -85,8 +87,10 @@ export default function RootLayout({
             </nav>
           </footer>
         </body>
-      </ClerkProvider>
     </html>
+    </Providers>
+    </ClerkProvider>
+
   );
 }
 
