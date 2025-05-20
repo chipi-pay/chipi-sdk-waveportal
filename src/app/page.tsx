@@ -55,22 +55,15 @@ export default function Home() {
       }
     : null;
 
-  // Log wallet data for debugging
-  useEffect(() => {
-    if (wallet) {
-      console.log("Wallet data available:", {
-        publicKey: wallet.publicKey.substring(0, 10) + '...',
-        hasPrivateKey: !!wallet.encryptedPrivateKey
-      });
-    }
-  }, [wallet]);
-
-  // Prepare calldata for the wave function
+  // Prepare calldata for the wave function - modify to match original implementation
   const getCalldata = (message: string) => {
-    // Convert each character to its code point and then to string
+    // Same conversion but format in a similar way to the original code
     const feltArr = Array.from(message).map((c) => BigInt(c.charCodeAt(0)).toString());
-    // Return array with length as first element, also as string
-    return [feltArr.length.toString(), ...feltArr];
+    
+    // Return in object format with message key, similar to how original CallData.compile worked
+    return {
+      message: feltArr
+    };
   };
 
   const fetchWaves = async () => {
@@ -132,8 +125,12 @@ export default function Home() {
     try {
       console.log("Preparing to send wave");
       
-      const callData = getCalldata(message);
-      console.log("Calldata prepared:", callData);
+      const messageData = getCalldata(message);
+      console.log("Message data prepared:", messageData);
+      
+      // Keep the calldata simple
+      const callData = [messageData.message.length.toString(), ...messageData.message];
+      console.log("Final calldata:", callData);
       console.log("Contract address:", CONTRACT_ADDRESS);
       
       // Use the correct method name that's available in the SDK
@@ -145,7 +142,8 @@ export default function Home() {
       
       console.log("Using method: callAnyContractAsync");
       
-      // Try with explicit network settings and error handling
+      // Simplify the payload - let Chipi handle the paymaster configuration
+      // Remove any parameters that might override the default paymaster setup
       const payload = {
         encryptKey: pin,
         wallet: {
@@ -158,16 +156,14 @@ export default function Home() {
             entrypoint: "wave",
             calldata: callData
           }
-        ],
-        // Add the following optional parameters that might help
-        network: "mainnet", // Explicitly specify network (or "testnet" if applicable)
-        maxFee: "1000000000000000", // Set a max fee (optional)
-        nonce: undefined // Let the service calculate nonce (optional)
+        ]
+        // Remove all custom parameters to ensure defaults are used
+        // The SDK should handle paymaster configuration automatically
       };
       
       console.log("Sending payload:", JSON.parse(JSON.stringify(payload)));
       
-      // Structure the request with a 'calls' array as required by the API
+      // Send the transaction
       const result = await callFn(payload);
       
       console.log("Wave sent successfully:", result);
@@ -181,6 +177,17 @@ export default function Home() {
       if (err instanceof Error) {
         console.error("Error details:", err.message);
         console.error("Error stack:", err.stack);
+        
+        // Enhanced debugging for paymaster issues
+        if (err.message.includes('argent/multicall-failed') || err.message.includes('u256_sub Overflow')) {
+          console.error("This appears to be a paymaster configuration issue. The transaction is failing at the contract level.");
+          alert("Transaction failed with a paymaster error. This typically happens when:\n\n" +
+                "1. The paymaster isn't properly configured\n" +
+                "2. The contract method isn't compatible with the paymaster\n" +
+                "3. The transaction parameters are incorrect\n\n" +
+                "Check the console for more details.");
+          return;
+        }
         
         // Try to extract more details if this is an API error
         try {
@@ -198,8 +205,7 @@ export default function Home() {
         }
       }
       
-      alert("Error sending wave: " + (err instanceof Error ? err.message : String(err)) + 
-            "\n\nThis may be a temporary issue with the Chipi service. Please try again later.");
+      alert("Error sending wave: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
