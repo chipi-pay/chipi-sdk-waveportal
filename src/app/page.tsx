@@ -5,7 +5,7 @@ import { Contract, RpcProvider } from 'starknet';
 import abi from './contracts/abi/WavePortal.abi.json';
 import { motion } from 'framer-motion';
 import { ClipLoader } from 'react-spinners';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useCallAnyContract } from "@chipi-pay/chipi-sdk";
 import Confetti from 'react-confetti';
@@ -36,14 +36,15 @@ export default function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   
   // Access the full hook result without destructuring
   const chipiContract = useCallAnyContract();
-  
+  const token = getToken({ template: "payot-io" });
   // Debugging
   console.log("Full Chipi Contract object:", chipiContract);
-
+  console.log("Token:", token);
   // Add state for PIN
   const [pin, setPin] = useState("");
 
