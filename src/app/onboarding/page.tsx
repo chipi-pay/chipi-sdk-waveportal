@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useCreateWallet } from "@chipi-pay/chipi-sdk";
@@ -10,6 +10,7 @@ import { completeOnboarding } from "./_actions";
 export default function OnboardingComponent() {
   // Access the current user's data
   const { user } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   const { createWalletAsync, isLoading, isError } = useCreateWallet();
 
@@ -22,6 +23,12 @@ export default function OnboardingComponent() {
   // 4. Reload the user data to refresh session claims
   // 5. Redirect to the main application page
   const handleSubmit = async (formData: FormData) => {
+    const token = await getToken({ template: "payot-io" });
+    console.log(token);
+    if (!token) {
+      throw new Error("No token found");
+    }
+
     try {
       const pin = formData.get('pin') as string;
       
@@ -34,7 +41,7 @@ export default function OnboardingComponent() {
       }
 
       console.log('Creating wallet...');
-      const response = await createWalletAsync(pin);
+      const response = await createWalletAsync({ encryptKey: "1234", bearerToken: token });
       console.log('Wallet creation response:', response);
 
       if (!response.success || !response.wallet) {

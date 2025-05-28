@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isPublicRoute = createRouteMatcher(["/", "/onboarding"])
+const isPublicRoute = createRouteMatcher(["/", "/onboarding", "/transfer"])
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
@@ -13,7 +13,7 @@ export default clerkMiddleware(async (auth, req) => {
 
    // Catch users who do not have `walletCreated: true` in their publicMetadata
   // Redirect them to the /onboading route to complete onboarding
-  if (userId && !sessionClaims?.metadata?.walletCreated && req.nextUrl.pathname !== "/onboarding") {
+  if (userId && !sessionClaims?.metadata?.walletCreated && req.nextUrl.pathname !== "/onboarding" && req.nextUrl.pathname !== "/transfer") {
     const onboardingUrl = new URL("/onboarding", req.url);
     return NextResponse.redirect(onboardingUrl);
   }
