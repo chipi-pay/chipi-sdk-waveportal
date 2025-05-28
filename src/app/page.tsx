@@ -226,7 +226,7 @@ export default function Home() {
     }, 15000);
 
     return () => clearInterval(refreshInterval);
-  }, []);
+  }, [loading]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] flex items-center justify-center p-4">

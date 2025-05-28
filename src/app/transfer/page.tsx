@@ -3,6 +3,19 @@
 import { useAuth } from '@clerk/nextjs'
 import { useTransfer } from "@chipi-pay/chipi-sdk"
 
+interface TransferParams {
+  encryptKey: string;
+  wallet: {
+    publicKey: string;
+    encryptedPrivateKey: string;
+  };
+  bearerToken: string;
+  contractAddress: string;
+  recipient: string;
+  amount: string;
+  decimals: number;
+}
+
 export default function TransferComponent() {
     // const { user } = useUser();
   const { getToken } = useAuth();
@@ -10,18 +23,18 @@ export default function TransferComponent() {
   const { transferAsync } = useTransfer();
 
   const wallet = {
-    publicKey: "0x633e3768....1e",
-    encryptedPrivateKey: "U2Fs....595JX7Lu7h5MJnj/Y9RGssgg3j9"
+    publicKey: "0x633e3768818ad163b93357505db6e35c79660f430c85c7326770c1c7c73451e",
+    encryptedPrivateKey: "U2FsdGVkX18CBNq6sy4a+8A5CnoduAbUK6Ntydptxt5f5YtgecVMxUqPuiVEcp0W3dl87a8b6vZ6+595JX7Lu7h5MJnj/Y9RdYogKKHJaSZnWv3DQMwwTOM+Gssgg3j9"
   };
 
   const handleTransfer = async () => {
    try {
-    const token = await getToken({ template: "your-template-name" });
+    const token = await getToken({ template: "payot-io" });
     if (!token) {
       throw new Error("No token found");
     }
 
-    const params: any = {
+    const params: TransferParams = {
         encryptKey: "1234", // Encrypt Key como cuarto argumento
         wallet,
         bearerToken: token, // Bearer Token como quinto argumento

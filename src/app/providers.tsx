@@ -2,7 +2,7 @@
 import { ChipiProvider } from "@chipi-pay/chipi-sdk";
 
 // All environment variables should be prefixed with NEXT_PUBLIC_ for client-side access
-const CHIPI_PUBLIC_KEY = "pk_prod_your_public_key";
+const CHIPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_CHIPI_PUBLIC_KEY;
 
 if (!CHIPI_PUBLIC_KEY) {
   console.error('Missing environment variables:', {
