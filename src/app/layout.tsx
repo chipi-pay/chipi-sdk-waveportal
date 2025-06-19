@@ -7,7 +7,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import Link from "next/link";
-import { Providers } from "./providers";
+// import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider signInFallbackRedirectUrl="/" signUpFallbackRedirectUrl="/" afterSignOutUrl="/">
-      <Providers>
+      {/* <Providers> */}
     <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
           <header className="flex items-center h-20 gap-4 px-4 border-b border-cyan-300 border-solid sm:px-8 border-opacity-20">
@@ -52,7 +52,7 @@ export default function RootLayout({
           <footer className="flex items-center h-20 gap-1 px-8 font-medium border-t border-cyan-300 border-opacity-20 md:px-20">
             <a
               className="flex gap-2 px-3 py-2 text-m font-semibold text-cyan-500 transition duration-100 rounded-md hover:text-cyan-300"
-              href="https://github.com/chipi-pay/waveportal-app"
+              href="https://github.com/chipi-pay/chipi-sdk-waveportal"
             >
               <span className="hidden sm:inline">View the Github Repo for this Chipi-SDK template</span>
             </a>
@@ -85,7 +85,7 @@ export default function RootLayout({
           </footer>
         </body>
     </html>
-    </Providers>
+    {/* </Providers> */}
     </ClerkProvider>
 
   );
