@@ -49,7 +49,7 @@ export default function RootLayout({
               {children}
           </main>
 
-          <footer className="sticky bottom-0 flex items-center h-20 gap-1 px-8 font-medium border-t border-cyan-300 border-opacity-20 md:px-20 bg-white bg-opacity-80 backdrop-blur">
+          <footer className="sticky bottom-0 flex items-center h-20 gap-1 px-8 font-medium border-t border-cyan-300 border-opacity-20 md:px-20">
             <a
               className="flex gap-2 px-3 py-2 text-m font-semibold text-cyan-500 transition duration-100 rounded-md hover:text-cyan-300"
               href="https://github.com/chipi-pay/waveportal-app"
