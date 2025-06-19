@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useCreateWallet } from "@chipi-pay/chipi-sdk";
@@ -12,6 +12,7 @@ export default function OnboardingComponent() {
   const { user } = useUser();
   const router = useRouter();
   const { createWalletAsync, isLoading, isError } = useCreateWallet();
+  const { getToken } = useAuth();
 
 
   // This function handles the form submission
@@ -34,7 +35,15 @@ export default function OnboardingComponent() {
       }
 
       console.log('Creating wallet...');
-      const response = await createWalletAsync(pin);
+      const token = await getToken({ template: "workshop" });
+      console.log("Token received:", token);
+      if (!token) {
+        throw new Error("No bearer token found");
+      }
+      const response = await createWalletAsync({
+        encryptKey: pin,
+        bearerToken: token,
+      });
       console.log('Wallet creation response:', response);
 
       if (!response.success || !response.wallet) {

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import StarknetProviderWrapper from './StarknetProviderWrapper';
 import {
   ClerkProvider,
   SignedIn,
@@ -47,9 +46,7 @@ export default function RootLayout({
           </header>
 
           <main className="grow">
-            <StarknetProviderWrapper>
               {children}
-            </StarknetProviderWrapper>
           </main>
 
           <footer className="flex items-center h-20 gap-1 px-8 font-medium border-t border-cyan-300 border-opacity-20 md:px-20">
