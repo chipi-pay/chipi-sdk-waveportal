@@ -9,9 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@chipi-pay/chipi-sdk": "^2.2.9",
+    "@chipi-pay/chipi-sdk": "^3.1.2",
     "@clerk/nextjs": "^6.19.4",
-    "@starknet-react/core": "^3.7.4",
     "framer-motion": "^12.12.1",
     "next": "15.3.2",
     "react": "^18.0.0",

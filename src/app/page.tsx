@@ -5,7 +5,7 @@ import { Contract, RpcProvider } from 'starknet';
 import abi from './contracts/abi/WavePortal.abi.json';
 import { motion } from 'framer-motion';
 import { ClipLoader } from 'react-spinners';
-import { useUser } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useCallAnyContract } from "@chipi-pay/chipi-sdk";
 import Confetti from 'react-confetti';
@@ -37,6 +37,7 @@ export default function Home() {
 
   const { isSignedIn, user } = useUser();
   const router = useRouter();
+  const { getToken } = useAuth();
   
   // Access the full hook result without destructuring
   const chipiContract = useCallAnyContract();
@@ -133,6 +134,13 @@ export default function Home() {
       console.log("Final calldata:", callData);
       console.log("Contract address:", CONTRACT_ADDRESS);
       
+      // Get the bearer token
+      const token = await getToken({ template: "workshop" });
+      console.log("Token received:", token);
+      if (!token) {
+        throw new Error("No bearer token found");
+      }
+      
       // Use the correct method name that's available in the SDK
       const callFn = chipiContract.callAnyContractAsync;
       
@@ -146,6 +154,7 @@ export default function Home() {
       // Remove any parameters that might override the default paymaster setup
       const payload = {
         encryptKey: pin,
+        bearerToken: token,
         wallet: {
           publicKey: wallet.publicKey,
           encryptedPrivateKey: wallet.encryptedPrivateKey
