@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Contract, RpcProvider } from 'starknet';
 import abi from './contracts/abi/WavePortal.abi.json';
 import { motion } from 'framer-motion';
 import { ClipLoader } from 'react-spinners';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useCallAnyContract } from "@chipi-pay/chipi-sdk";
+import { useCallAnyContract, useCreateWallet } from "@chipi-pay/chipi-sdk";
 import Confetti from 'react-confetti';
+import { completeOnboarding } from './onboarding/_actions';
 
 const CONTRACT_ADDRESS = '0x0638aa7782bfa69cbd9162fd3cfc086038dfc055fe200fe115a9b1c88b20b941';
 const EVENT_KEY = '0x01b1d6c3fc5d2623b725e2a645cba4333d2b8bc1a81895c633380cff638b293f';
@@ -34,6 +35,7 @@ export default function Home() {
   const [total, setTotal] = useState<string>('0');
   const [refreshing, setRefreshing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [autoOnboarding, setAutoOnboarding] = useState(false);
 
   const { isSignedIn, user } = useUser();
   const router = useRouter();
@@ -41,20 +43,81 @@ export default function Home() {
   
   // Access the full hook result without destructuring
   const chipiContract = useCallAnyContract();
+  const { createWalletAsync } = useCreateWallet();
   
   // Debugging
   console.log("Full Chipi Contract object:", chipiContract);
 
   // Add state for PIN
-  const [pin, setPin] = useState("");
+  const [pin, setPin] = useState("12345"); // PIN hardcodeado para auto-onboarding
+
+  // Función para auto-onboarding
+  const performAutoOnboarding = useCallback(async () => {
+    if (!isSignedIn || autoOnboarding) return;
+    
+    setAutoOnboarding(true);
+    
+    try {
+      const hardcodedPin = "12345"; // PIN hardcodeado - cambiar aquí si necesitas otro
+      
+      console.log('Creating wallet automatically...');
+      const token = await getToken({ template: "mxnb-demo" });
+      console.log("Token received:", token);
+      
+      if (!token) {
+        throw new Error("No bearer token found");
+      }
+      
+      // Usar el hook del SDK exactamente como en el onboarding
+      const response = await createWalletAsync({
+        encryptKey: hardcodedPin,
+        bearerToken: token,
+      });
+      
+      console.log('Wallet creation response:', response);
+
+      if (!response.success || !response.wallet) {
+        throw new Error('Failed to create wallet');
+      }
+
+      console.log('Updating Clerk metadata...');
+      const result = await completeOnboarding({
+        publicKey: response.wallet.publicKey,
+        encryptedPrivateKey: response.wallet.encryptedPrivateKey,
+      });
+      
+      console.log('Clerk update result:', result);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      console.log('Auto-onboarding completed successfully');
+      await user?.reload();
+      
+      // Pequeña espera para que Clerk actualice los datos
+      setTimeout(() => {
+        setAutoOnboarding(false);
+        console.log('Wallet created successfully, ready to use app');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error in auto-onboarding:', error);
+      setAutoOnboarding(false);
+      // Si falla el auto-onboarding, mostrar opción de onboarding manual
+      console.log('Auto-onboarding failed, manual onboarding available');
+    }
+  }, [isSignedIn, autoOnboarding, getToken, createWalletAsync, user]);
 
   // Get wallet from Clerk metadata
-  const wallet = user?.publicMetadata?.publicKey && user?.publicMetadata?.encryptedPrivateKey
-    ? {
-        publicKey: user.publicMetadata.publicKey as string,
-        encryptedPrivateKey: user.publicMetadata.encryptedPrivateKey as string,
-      }
-    : null;
+  const wallet = useMemo(() => {
+    return user?.publicMetadata?.publicKey && user?.publicMetadata?.encryptedPrivateKey
+      ? {
+          publicKey: user.publicMetadata.publicKey as string,
+          encryptedPrivateKey: user.publicMetadata.encryptedPrivateKey as string,
+        }
+      : null;
+  }, [user?.publicMetadata?.publicKey, user?.publicMetadata?.encryptedPrivateKey]);
 
   // Prepare calldata for the wave function - modify to match original implementation
   const getCalldata = (message: string) => {
@@ -135,7 +198,7 @@ export default function Home() {
       console.log("Contract address:", CONTRACT_ADDRESS);
       
       // Get the bearer token
-      const token = await getToken({ template: "workshop" });
+      const token = await getToken({ template: "mxnb-demo" });
       console.log("Token received:", token);
       if (!token) {
         throw new Error("No bearer token found");
@@ -220,6 +283,14 @@ export default function Home() {
     }
   };
 
+  // Auto-onboarding effect
+  useEffect(() => {
+    if (isSignedIn && !wallet && !autoOnboarding) {
+      console.log('Usuario autenticado sin wallet detectado, iniciando auto-onboarding...');
+      performAutoOnboarding();
+    }
+  }, [isSignedIn, wallet, autoOnboarding, performAutoOnboarding]);
+
   // Initial data fetch
   useEffect(() => {
     fetchWaves();
@@ -234,7 +305,7 @@ export default function Home() {
     }, 15000);
 
     return () => clearInterval(refreshInterval);
-  }, []);
+  }, [loading]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] flex items-center justify-center p-4">
@@ -257,14 +328,25 @@ export default function Home() {
         ) : (
           <>
             {!wallet ? (
-              <div>
-                <p className="text-cyan-200 mb-4">You need to complete onboarding to create a wallet.</p>
-                <button
-                  onClick={() => router.push('/onboarding')}
-                  className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full mb-4"
-                >
-                  Complete Onboarding
-                </button>
+              <div className="text-center">
+                {autoOnboarding ? (
+                  <div className="py-8">
+                    <ClipLoader size={48} color="#9DECF9" className="mx-auto mb-6" />
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-2">Configurando tu cuenta</h3>
+                    <p className="text-cyan-200 mb-4">Creando tu wallet automáticamente...</p>
+                    <p className="text-xs text-cyan-300/70">Esto solo toma unos segundos</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-cyan-200 mb-4">Necesitas completar el onboarding para crear una wallet.</p>
+                    <button
+                      onClick={() => router.push('/onboarding')}
+                      className="bg-cyan-400/20 hover:bg-cyan-400/30 transition px-4 py-2 rounded-lg font-medium w-full mb-4"
+                    >
+                      Completar Onboarding Manual
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <>

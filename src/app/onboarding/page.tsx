@@ -35,7 +35,7 @@ export default function OnboardingComponent() {
       }
 
       console.log('Creating wallet...');
-      const token = await getToken({ template: "workshop" });
+      const token = await getToken({ template: "mxnb-demo" });
       console.log("Token received:", token);
       if (!token) {
         throw new Error("No bearer token found");
@@ -62,7 +62,8 @@ export default function OnboardingComponent() {
       }
 
       await user?.reload();
-      router.push("/");
+      // Forzar recarga completa de la página para actualizar session claims
+      window.location.href = "/";
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       // You might want to show this error to the user
