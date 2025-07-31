@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useCreateWallet } from "@chipi-pay/chipi-sdk";
 import { completeOnboarding } from "./_actions";
@@ -10,7 +9,6 @@ import { completeOnboarding } from "./_actions";
 export default function OnboardingComponent() {
   // Access the current user's data
   const { user } = useUser();
-  const router = useRouter();
   const { createWalletAsync, isLoading, isError } = useCreateWallet();
   const { getToken } = useAuth();
 
@@ -35,7 +33,7 @@ export default function OnboardingComponent() {
       }
 
       console.log('Creating wallet...');
-      const token = await getToken({ template: "mxnb-demo" });
+      const token = await getToken({ template: process.env.NEXT_PUBLIC_JWT_TEMPLATE as string });
       console.log("Token received:", token);
       if (!token) {
         throw new Error("No bearer token found");

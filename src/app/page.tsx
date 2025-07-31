@@ -61,7 +61,7 @@ export default function Home() {
       const hardcodedPin = "12345"; // PIN hardcodeado - cambiar aquí si necesitas otro
       
       console.log('Creating wallet automatically...');
-      const token = await getToken({ template: "mxnb-demo" });
+      const token = await getToken({ template: process.env.NEXT_PUBLIC_JWT_TEMPLATE });
       console.log("Token received:", token);
       
       if (!token) {
@@ -198,7 +198,7 @@ export default function Home() {
       console.log("Contract address:", CONTRACT_ADDRESS);
       
       // Get the bearer token
-      const token = await getToken({ template: "mxnb-demo" });
+      const token = await getToken({ template: process.env.NEXT_PUBLIC_JWT_TEMPLATE as string });
       console.log("Token received:", token);
       if (!token) {
         throw new Error("No bearer token found");
